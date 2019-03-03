@@ -69,6 +69,10 @@ function download_image(req, res) {
       image.resize(width || null, height || null);
     }
 
+    if (flip) image.flip();
+    if (flop) image.flop();
+    if (blur > 0) image.blur(blur);
+    if (sharpen > 0) image.sharpen(sharpen);
     if (greyscale) {
       image.greyscale();
     }
