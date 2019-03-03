@@ -68,8 +68,21 @@ app.param("height", (req, res, next, height) => {
   return next();
 });
 
+app.param("greyscale", (req, res, next, greyscale) => {
+  if (greyscale !== "bw") return next("route");
+
+  req.greyscale = true;
+  return next();
+});
+
+app.get(
+  "/uploads/:width(\\d+)x:height(\\d+)-:greyscale-:image",
+  download_image
+);
 app.get("/uploads/:width(\\d+)x:height(\\d+)-:image", download_image);
+app.get("/uploads/_x:height(\\d+)-:greyscale-:image", download_image);
 app.get("/uploads/_x:height(\\d+)-:image", download_image);
+app.get("/uploads/:width(\\d+)x_-:greyscale-:image", download_image);
 app.get("/uploads/:width(\\d+)x_-:image", download_image);
 app.get("/uploads/:image", download_image);
 
@@ -89,6 +102,10 @@ function download_image(req, res) {
 
     if (req.width || req.height) {
       image.resize(req.width, req.height);
+    }
+
+    if (req.greyscale) {
+      image.greyscale();
     }
 
     res.setHeader("Content-Type", "image/" + path.extname(req.image).substr(1));
