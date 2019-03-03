@@ -1,63 +1,56 @@
-const seneca = require("seneca");
 const sharp = require("sharp");
 const path = require("path");
 const fs = require("fs");
-const service = seneca();
 
-service.add("role:upload, image:*, data:*", function(msg, next) {
-  let filename = path.join(__dirname, "uploads", msg.image);
-  let data = Buffer.from(msg.data, "base64");
+module.exports = function(settings = { path: "uploads" }) {
+  const localpath = image => {
+    return path.join(settings.path, image);
+  };
 
-  fs.writeFile(filename, data, err => {
-    if (err) return next(err);
+  const access = (filename, next) => {
+    fs.access(filename, fs.constants.R_OK, err => {
+      return next(!err, filename);
+    });
+  };
 
-    return next(null, { size: data.length });
-  });
-});
-
-service.add("role:check, image:*", function(msg, next) {
-  let filename = path.join(__dirname, "uploads", msg.image);
-
-  fs.access(filename, fs.constants.R_OK, err => {
-    return next(null, { exists: !err });
-  });
-});
-
-service.add("role:download, image:*", function(msg, next) {
-  let filename = path.join(__dirname, "uploads", msg.image);
-
-  fs.access(filename, fs.constants.R_OK, err => {
-    if (err) return next(err);
-
-    let image = sharp(filename);
-    let width = +msg.width;
-    let height = +msg.height;
-    let blur = +msg.blur;
-    let sharpen = +msg.sharpen;
-    let greyscale = !!msg.greyscale;
-    let flip = !!msg.flip;
-    let flop = !!msg.flop;
-
-    if (width > 0 && height > 0) {
-      image.ignoreAspectRatio();
-    }
-
-    if (width > 0 || height > 0) {
-      image.resize(width || null, height || null);
-    }
-
-    if (flip) image.flip();
-    if (flop) image.flop();
-    if (blur > 0) image.blur(blur);
-    if (sharpen > 0) image.sharpen(sharpen);
-    if (greyscale) {
-      image.greyscale();
-    }
-
-    image.toBuffer().then(data => {
-      return next(null, { data: data.toString("base64") });
+  this.add("role:check,image:*", (msg, next) => {
+    access(localpath(msg.image), exists => {
+      return next(null, { exists: exists });
     });
   });
-});
 
-service.listen(3000);
+  this.add("role:upload,image:*,data:*", (msg, next) => {
+    let data = Buffer.from(msg.data, "base64");
+
+    fs.writeFile(localpath(msg.image), data, err => {
+      return next(err, { size: data.length });
+    });
+  });
+
+  this.add("role:download,image:*", (msg, next) => {
+    access(localpath(msg.image), (exists, filename) => {
+      if (!exists) return next(new Error("image not found"));
+
+      let image = sharp(filename);
+      let width = +msg.width || null;
+      let height = +msg.height || null;
+      let blur = +msg.blur;
+      let sharpen = +msg.sharpen;
+      let greyscale = !!msg.greyscale;
+      let flip = !!msg.flip;
+      let flop = !!msg.flop;
+
+      if (width && height) image.ignoreAspectRatio();
+      if (width || height) image.resize(width, height);
+      if (flip) image.flip();
+      if (flop) image.flop();
+      if (blur > 0) image.blur(blur);
+      if (sharpen > 0) image.sharpen(sharpen);
+      if (greyscale) image.greyscale();
+
+      image.toBuffer().then(data => {
+        return next(null, { data: data.toString("base64") });
+      });
+    });
+  });
+};
