@@ -55,13 +55,17 @@ function download_image(req, res) {
     let image = sharp(req.localpath);
     let width = +req.query.width;
     let height = +req.query.height;
+    let blur = +req.query.blur;
+    let sharpen = +req.query.sharpen;
     let greyscale = ["y", "yes", "1", "on"].includes(req.query.greyscale);
+    let flip = ["y", "yes", "1", "on"].includes(req.query.flip);
+    let flop = ["y", "yes", "1", "on"].includes(req.query.flop);
 
     if (width && height) {
       image.ignoreAspectRatio();
     }
 
-    if (width || height) {
+    if (width > 0 || height > 0) {
       image.resize(width || null, height || null);
     }
 
