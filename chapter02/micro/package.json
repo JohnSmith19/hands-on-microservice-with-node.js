@@ -1,0 +1,12 @@
+{
+  "name": "micro",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "micro": "^9.3.3"
+  },
+  "scripts": {
+    "start": "micro"
+  }
+}
