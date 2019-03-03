@@ -55,6 +55,44 @@ app.param("image", (req, res, next, image) => {
   return next();
 });
 
+app.param("width", (req, res, next, width) => {
+  req.width = +width;
+
+  return next();
+});
+
+app.param("height", (req, res, next, height) => {
+  req.height = +height;
+
+  return next();
+});
+
+function download_image(req, res) {
+  console.log("download_image");
+
+  fs.access(req.localpath, fs.constants.R_OK, err => {
+    if (err) return res.status(404).end();
+
+    let image = sharp(req.localpath);
+
+    if (req.width && req.height) {
+      image.ignoreAspectRatio();
+    }
+
+    if (req.width || req.height) {
+      image.resize(req.width, req.height);
+    }
+
+    res.setHeader("Content-Type", "image/" + path.extname(req.image).substr(1));
+    image.pipe(res);
+  });
+}
+
+app.get("/uploads/:width(\\d+)x:height(\\d+)-:image", download_image);
+app.get("/uploads/_x:height(\\d+)-:image", download_image);
+app.get("/uploads/:width(\\d+)x_-:image", download_image);
+app.get("/uploads/:image", download_image);
+
 app.get(/\/thumbnail\.(jpg|png)/, (req, res, next) => {
   let format = req.params[0] === "png" ? "png" : "jpeg";
   let width = +req.query.width || 300;
