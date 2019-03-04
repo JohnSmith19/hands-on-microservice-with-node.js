@@ -2,6 +2,8 @@ const express = require("express");
 const settings = require("./settings");
 const mysql = require("mysql");
 const bodyparser = require("body-parser");
+const sharp = require("sharp");
+const path = require("path");
 
 const app = express();
 const db = mysql.createConnection(settings.db);
@@ -114,4 +116,30 @@ db.connect(err => {
   app.listen(3000, () => {
     console.log("app: ready");
   });
+
+  app.get("/stats", (req, res) => {
+    db.query(
+      "SELECT COUNT(*) total" +
+        ", SUM(size) size " +
+        ", MAX(date_created) last_created " +
+        "FROM images",
+      (err, rows) => {
+        if (err) {
+          return res.status(500).end();
+        }
+
+        rows[0].uptime = process.uptime();
+
+        return res.send(rows[0]);
+      }
+    );
+  });
+
+  setInterval(() => {
+    db.query(
+      "DELETE FROM images " +
+        "WHERE (date_created < UTC_TIMESTAMP - INTERVAL 1 WEEK AND date_used IS NULL) " +
+        " OR (date_used < UTC_TIMESTAMP - INTERVAL 1 MONTH)"
+    );
+  }, 3600 * 1000);
 });
