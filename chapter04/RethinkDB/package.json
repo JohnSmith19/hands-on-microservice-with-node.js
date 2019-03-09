@@ -1,0 +1,12 @@
+{
+  "name": "RethinkDB",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "rethinkdb": "^2.3.3",
+    "sharp": "^0.21.3"
+  }
+}
