@@ -70,6 +70,18 @@ db.connect(err => {
   });
 
   app.get("/uploads/:image", (req, res) => {
+    if (Object.keys(req.query).length === 0) {
+      db.query("UPDATE images SET date_used = UTC_TIMESTAMP WHERE id = ?", [
+        req.image.id
+      ]);
+
+      res.setHeader(
+        "Content-Type",
+        "image/" + path.extname(req.image.name).substr(1)
+      );
+
+      return res.end(req.image.data);
+    }
     let image = sharp(req.image.data);
     let width = +req.query.width;
     let height = +req.query.height;
