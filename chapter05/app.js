@@ -133,8 +133,8 @@ db.connect(err => {
   app.get("/stats", (req, res) => {
     db.query(
       "SELECT COUNT(*) total" +
-        ", SUM(size) size " +
-        ", MAX(date_created) last_created " +
+        ", SUM(size) size" +
+        ", MAX(date_used) last_used " +
         "FROM images",
       (err, rows) => {
         if (err) {
@@ -152,7 +152,7 @@ db.connect(err => {
     db.query(
       "DELETE FROM images " +
         "WHERE (date_created < UTC_TIMESTAMP - INTERVAL 1 WEEK AND date_used IS NULL) " +
-        " OR (date_used < UTC_TIMESTAMP - INTERVAL 1 MONTH)"
+        "   OR (date_used < UTC_TIMESTAMP - INTERVAL 1 MONTH)"
     );
   }, 3600 * 1000);
 });
